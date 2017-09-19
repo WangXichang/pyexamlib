@@ -200,7 +200,7 @@ class SegTable(object):
 
 def exp_scoredf_normal(mean=70, std=10, maxscore=100, minscore=0, size=100000):
     """
-    生成具有正态分布的分数数据，类型为 pandas.DataFrame, 列名为 sf
+    生成具有正态分布的模拟分数数据，类型为 pandas.DataFrame, 列名为 sf
     create a score dataframe with fields 'sf', used to test some application
     :parameter
         mean: 均值， std:标准差， maxscore:最大分值， minscore:最小分值， size:人数（样本数）
