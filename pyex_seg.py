@@ -102,6 +102,8 @@ class SegTable(object):
         self.__disp = False
         # result data
         self.__segDf = None
+        # run status
+        self.__runsuccess = False
 
     @property
     def segdf(self):
@@ -146,7 +148,8 @@ class SegTable(object):
         print('seg min value:{}'.format(self.__segMin))
         print('seg step value:{}'.format(self.__segStep))
         print('seg sort mode:{}'.format(self.__segSort))
-        print('seg clip mode:{}'.format(self.__segAlldata))
+        print('seg crop mode:{}'.format(self.__segAlldata))
+        print('seg disp mode:{}'.format(self.__disp))
 
     def check(self):
         if type(self.__rawDf) == pd.Series:
@@ -225,9 +228,14 @@ class SegTable(object):
                         curpoint += curstep
         if self.__disp:
             print('total consumed time:{}'.format(time.clock()-sttime))
+        self.__runsuccess = True
         return
 
     def plot(self):
+        if not self.__runsuccess:
+            if self.__disp:
+                print('result is not created, please run!')
+            return
         for sf in self.segfields:
             plt.figure('seg table figure({})'.format(self.__segSort))
             plt.subplot(221)
