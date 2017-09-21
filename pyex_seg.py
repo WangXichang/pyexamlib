@@ -64,6 +64,8 @@ class SegTable(object):
                  default=False.
                  考虑最大和最小值之外的分数记录，高于的segmax的分数计数加入segmax分数段，
                  低于segmin分数值的计数加入segmin分数段
+        disp: bool, True: display run() message include time consume, False: close display message in run()
+              打开（True）或关闭（False）在运行分段统计过程中的显示信息
     运行结果
     :result
         segdf: dataframe with field 'seg, segfield_count, segfield_cumsum, segfield_percent'
@@ -73,7 +75,7 @@ class SegTable(object):
         seg = pyex_seg.SegTable()
         df = pd.DataFrame({'sf':[i % 11 for i in range(100)]})
         seg.set_data(df, 'sf')
-        seg.set_parameters(segmax=100, segmin=1, segstep=1, segsort='descending', setcut=True)
+        seg.set_parameters(segmax=100, segmin=1, segstep=1, segsort='descending', segalldata=True, disp=True)
         seg.run()
         seg.plot()
         resultdf = seg.segdf    # get result dataframe, with fields: sf, sf_count, sf_cumsum, sf_percent
@@ -181,10 +183,15 @@ class SegTable(object):
         seglist = [x for x in range(self.__segMin, self.__segMax + 1)]
         self.__segDf = pd.DataFrame({'seg': seglist})
         for f in self.segfields:
+            # calculate preliminary group count
             r = self.rawdf.groupby(f)[f].count()
+            if self.__disp:
+                print('finished groupby ' + f, ' use time:{0}'.format(time.clock() - sttime))
             # count seg_count in [segmin, segmax]
             self.__segDf[f + '_count'] = self.__segDf['seg'].\
                 apply(lambda x: np.int64(r[x]) if x in r.index else 0)
+            if self.__disp:
+                print('finished count ' + f, ' use time:{}'.format(time.clock() - sttime))
             # add outside scope number to segmin, segmax
             if self.__segAlldata:
                 self.__segDf.loc[self.__segDf.seg == self.__segMin, f+'_count'] = r[r.index <= self.__segMin].sum()
@@ -195,8 +202,12 @@ class SegTable(object):
             # calculate cumsum field
             self.__segDf[f + '_cumsum'] = self.__segDf[f + '_count'].cumsum()
             # calculate percent field
+            if self.__disp:
+                print('finished cumsum ' + f, ' use time:{0}'.format(time.clock() - sttime))
             maxsum = max(max(self.segdf[f + '_cumsum']), 1)     # avoid divided by 0 in percent computing
             self.__segDf[f + '_percent'] = self.__segDf[f + '_cumsum'].apply(lambda x: x / maxsum)
+            if self.__disp:
+                print('finished percent ' + f, ' use time:{}'.format(time.clock() - sttime))
             # processing seg step calculating: skip step at seg field, set -1 for segs not in step
             if self.__segStep > 1:
                 segcountname = f+'_count{0}'.format(self.__segStep)
@@ -213,23 +224,26 @@ class SegTable(object):
                         c = 0
                         curpoint += curstep
         if self.__disp:
-            print('consume time:{}'.format(time.clock()-sttime))
+            print('total consumed time:{}'.format(time.clock()-sttime))
         return
 
     def plot(self):
         for sf in self.segfields:
+            plt.figure('seg table figure({})'.format(self.__segSort))
             plt.subplot(221)
             plt.hist(self.rawdf[sf], 20)
-            plt.title('raw score histogram')
-            plt.figure('seg table figure')
+            plt.title('raw data histogram')
             plt.subplot(222)
             plt.plot(self.segdf.seg, self.segdf[sf+'_count'])
             plt.title('seg -- count')
+            plt.xlim([self.__segMin, self.__segMax])
             plt.subplot(223)
             plt.plot(self.segdf.seg, self.segdf[sf + '_cumsum'])
             plt.title('seg -- cumsum')
+            plt.xlim([self.__segMin, self.__segMax])
             plt.subplot(224)
             plt.plot(self.segdf.seg, self.segdf[sf + '_percent'])
             plt.title('seg -- percent')
+            plt.xlim([self.__segMin, self.__segMax])
             plt.show()
 # SegTable class end
