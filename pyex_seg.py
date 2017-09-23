@@ -32,9 +32,18 @@ def test_segtable():
     expdf = pd.DataFrame({'sf': [1, 2, 2, 3, 3, 3, 4, 4, 4, 4, 5, 6, 7, 8, 9]})
     seg = SegTable()
     seg.set_data(expdf, ['sf'])
-    seg.set_parameters(segstep=3, segmax=8, segmin=3, segalldata=True, disp=True)
+    seg.set_parameters(segstep=3, segmax=8, segmin=3, segalldata=True, dispmode=True)
     seg.run()
     seg.plot()
+    seg.show_parameters()
+    print(seg.segdf)
+    # change parameters to run to get new result
+    seg.segalldata = False
+    seg.segmax = 7
+    seg.segstep = 2
+    seg.run()
+    seg.show_parameters()
+    print(seg.segdf)
     return seg
 
 
@@ -64,8 +73,8 @@ class SegTable(object):
                  default=False.
                  考虑最大和最小值之外的分数记录，高于的segmax的分数计数加入segmax分数段，
                  低于segmin分数值的计数加入segmin分数段
-        disp: bool, True: display run() message include time consume, False: close display message in run()
-              打开（True）或关闭（False）在运行分段统计过程中的显示信息
+        dispmode: bool, True: display run() message include time consume, False: close display message in run()
+                  打开（True）或关闭（False）在运行分段统计过程中的显示信息
     运行结果
     :result
         segdf: dataframe with field 'seg, segfield_count, segfield_cumsum, segfield_percent'
@@ -75,7 +84,7 @@ class SegTable(object):
         seg = pyex_seg.SegTable()
         df = pd.DataFrame({'sf':[i % 11 for i in range(100)]})
         seg.set_data(df, 'sf')
-        seg.set_parameters(segmax=100, segmin=1, segstep=1, segsort='descending', segalldata=True, disp=True)
+        seg.set_parameters(segmax=100, segmin=1, segstep=1, segsort='descending', segalldata=True, dispmode=True)
         seg.run()
         seg.plot()
         resultdf = seg.segdf    # get result dataframe, with fields: sf, sf_count, sf_cumsum, sf_percent
@@ -87,6 +96,9 @@ class SegTable(object):
         segclip is used to include or exclude count() outside to segmin or segmax repectively
         2)分数字段的类型为整数或浮点数（实数）
         score fields type is int or float
+        3)可以通过属性方式单独设置数据(rawdata),字段列表（scorefields),各项参数（segmax, segmin, segsort,segalldata,
+        segmode), 如，seg.scorefields = ['score_1', 'score_2']; seg.segmax = 120， 便于在计算期间调整模型。
+        by property mode, rawdata,scorefields,parameters can be setted individually
     """
 
     def __init__(self):
@@ -125,6 +137,46 @@ class SegTable(object):
     def segfields(self, sfs):
         self.__segFields = sfs
 
+    @property
+    def segmax(self):
+        return self.__segMax
+
+    @segmax.setter
+    def segmax(self, segvalue):
+        self.__segMax = segvalue
+
+    @property
+    def segmin(self):
+        return self.__segMin
+
+    @segmin.setter
+    def segmin(self, segvalue):
+        self.__segMin = segvalue
+
+    @property
+    def segsort(self):
+        return self.__segSort
+
+    @segsort.setter
+    def segsort(self, sortstr):
+        self.__segSort = sortstr
+
+    @property
+    def segalldata(self):
+        return self.__segAlldata
+
+    @segalldata.setter
+    def segalldata(self, datamode):
+        self.__segAlldata = datamode
+
+    @property
+    def dispmode(self):
+        return self.__disp
+
+    @dispmode.setter
+    def dispmode(self, dispmode):
+        self.__disp = dispmode
+
     def set_data(self, df, segfields=None):
         self.rawdf = df
         if type(segfields) == str:
@@ -135,13 +187,13 @@ class SegTable(object):
             self.segfields = segfields
 
     def set_parameters(self, segmax=100, segmin=0, segstep=1, segsort='descending',
-                       segalldata=False, disp=True):
+                       segalldata=False, dispmode=True):
         self.__segMax = segmax
         self.__segMin = segmin
         self.__segStep = segstep
         self.__segSort = segsort
         self.__segAlldata = segalldata
-        self.__disp = disp
+        self.__disp = dispmode
 
     def show_parameters(self):
         print('seg max value:{}'.format(self.__segMax))
