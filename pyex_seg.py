@@ -307,3 +307,40 @@ class SegTable(object):
             plt.xlim([self.__segMin, self.__segMax])
             plt.show()
 # SegTable class end
+
+
+def cross_seg(df,    # source dataframe
+              keyf,  # key field to calculate segment
+              vf,  # cross field, calculate count for >=keyf_seg & >=vf_seg
+              vfseglist=(40, 50, 60, 70, 80, 90, 100)  # segment for cross field
+              ):
+    display_step = 20
+    segmodel = SegTable()
+    segmodel.set_data(df, keyf)
+    segmodel.set_parameters(segmax=max(df[keyf]))
+    segmodel.run()
+    dfseg = segmodel.segdf
+    dfcount = dfseg[keyf+'_cumsum'].tail(1).values[0]
+    vfseg = {x: [] for x in vfseglist}
+    vfper = {x: [] for x in vfseglist}
+    seglen = dfseg['seg'].count()
+    for sv, step in zip(dfseg['seg'], range(seglen)):
+        if (step % display_step == 0) | (step == seglen-1):
+            print('=' * int((step+1)/seglen * 30) + '>>' + f'{float_str((step+1)/seglen, 1, 2)}')
+        for vfv in vfseglist:
+            segcount = df.loc[(df[keyf] >= sv) & (df[vf] >= vfv), vf].count()
+            vfseg[vfv].append(segcount)
+            vfper[vfv].append(segcount/dfcount)
+    for vs in vfseglist:
+        dfseg[vf + str(vs) + '_cumsum'] = vfseg[vs]
+        dfseg[vf + str(vs) + '_percent'] = vfper[vs]
+    return dfseg
+
+
+def float_str(x, d1, d2):
+    d1 = d1 + d2 + 1
+    return f'%{d1}.{d2}f' % x
+
+
+def int_str(x, d):
+    return f'%{d}d' % x
