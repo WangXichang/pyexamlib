@@ -19,8 +19,11 @@ def exp_scoredf_normal(mean=70, std=10, maxscore=100, minscore=0, size=100000):
     :return
         DataFrame, columns = {'sf'}
     """
-    df = pd.DataFrame({'sf': [max(minscore, min(int(np.random.randn(1)*std + mean), maxscore))
-                              for _ in range(size)]})
+    df = pd.DataFrame({'f1': [max(minscore, min(int(np.random.randn(1)*std + mean), maxscore))
+                              for _ in range(size)],
+                       'f2': [max(minscore, min(int(np.random.randn(1) * std + mean), maxscore))
+                              for _ in range(size)],
+                       })
     return df
 
 

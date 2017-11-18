@@ -32,7 +32,7 @@ def test_segtable():
     expdf = pd.DataFrame({'sf': [1, 2, 2, 3, 3, 3, 4, 4, 4, 4, 5, 6, 7, 8, 9]})
     seg = SegTable()
     seg.set_data(expdf, ['sf'])
-    seg.set_parameters(segstep=3, segmax=8, segmin=3, segalldata=True, dispmode=True)
+    seg.set_parameters(segstep=3, segmax=8, segmin=3, alldata=True, dispmode=True)
     seg.run()
     seg.plot()
     seg.show_parameters()
@@ -187,12 +187,12 @@ class SegTable(object):
             self.segfields = segfields
 
     def set_parameters(self, segmax=100, segmin=0, segstep=1, segsort='descending',
-                       segalldata=False, dispmode=True):
+                       alldata=False, dispmode=True):
         self.__segMax = segmax
         self.__segMin = segmin
         self.__segStep = segstep
         self.__segSort = segsort
-        self.__segAlldata = segalldata
+        self.__segAlldata = alldata
         self.__disp = dispmode
 
     def show_parameters(self):
@@ -326,6 +326,14 @@ def cross_seg(df,    # source dataframe
               vf,  # cross field, calculate count for >=keyf_seg & >=vf_seg
               vfseglist=(40, 50, 60, 70, 80, 90, 100)  # segment for cross field
               ):
+
+    def float_str(x, d1, d2):
+        d1 = d1 + d2 + 1
+        return f'%{d1}.{d2}f' % x
+
+    def int_str(x, d):
+        return f'%{d}d' % x
+
     display_step = 20
     segmodel = SegTable()
     segmodel.set_data(df, keyf)
@@ -347,12 +355,3 @@ def cross_seg(df,    # source dataframe
         dfseg[vf + str(vs) + '_cumsum'] = vfseg[vs]
         dfseg[vf + str(vs) + '_percent'] = vfper[vs]
     return dfseg
-
-
-def float_str(x, d1, d2):
-    d1 = d1 + d2 + 1
-    return f'%{d1}.{d2}f' % x
-
-
-def int_str(x, d):
-    return f'%{d}d' % x
