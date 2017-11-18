@@ -288,23 +288,35 @@ class SegTable(object):
             if self.__disp:
                 print('result is not created, please run!')
             return
+        legendlist = []
+        step = 0
         for sf in self.segfields:
+            step += 1
+            legendlist.append(sf)
             plt.figure('seg table figure({})'.format(self.__segSort))
             plt.subplot(221)
             plt.hist(self.rawdf[sf], 20)
             plt.title('raw data histogram')
+            if step == len(self.segfields):
+                plt.legend(legendlist)
             plt.subplot(222)
             plt.plot(self.segdf.seg, self.segdf[sf+'_count'])
+            if step == len(self.segfields):
+                plt.legend(legendlist)
             plt.title('seg -- count')
             plt.xlim([self.__segMin, self.__segMax])
             plt.subplot(223)
             plt.plot(self.segdf.seg, self.segdf[sf + '_cumsum'])
             plt.title('seg -- cumsum')
             plt.xlim([self.__segMin, self.__segMax])
+            if step == len(self.segfields):
+                plt.legend(legendlist)
             plt.subplot(224)
             plt.plot(self.segdf.seg, self.segdf[sf + '_percent'])
             plt.title('seg -- percent')
             plt.xlim([self.__segMin, self.__segMax])
+            if step == len(self.segfields):
+                plt.legend(legendlist)
             plt.show()
 # SegTable class end
 
