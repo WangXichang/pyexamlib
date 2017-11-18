@@ -52,12 +52,31 @@ class ScoreData():
     def read_rawdf(self):
         # self.df = pd.read_csv('d:/work/newgk/shanghai1711/cj17b.csv', sep='\t', index_col=0)
         self.rawdf = pd.read_csv(self.fs_file, sep='\t', index_col=0)
-        self.rawdf = self.rawdf[self.rawdf.ysw > 0]
-        self.dfswgwl = pd.DataFrame({'wl': [self.rawdf[self.rawdf.sw == x]['wl'].mean() for x in range(91)], 'sw': [x for x in range(91)]})
-        self.dfwlgsw = pd.DataFrame({'sw': [self.rawdf[self.rawdf.wl == x]['sw'].mean() for x in range(111)], 'wl': [x for x in range(111)]})
-        self.dfyswgwl = pd.DataFrame({'wl': [self.rawdf[self.rawdf.ysw == x]['wl'].mean() for x in range(450)], 'ysw': [x for x in range(450)]})
-        self.dfwlgysw = pd.DataFrame({'ysw': [self.rawdf[self.rawdf.wl == x]['ysw'].mean() for x in range(111)], 'wl': [x for x in range(111)]})
+        #self.rawdf = self.rawdf[self.rawdf.ysw > 0]
+        #self.dfswgwl = pd.DataFrame({'wl': [self.rawdf[self.rawdf.sw == x]['wl'].mean() for x in range(91)], 'sw': [x for x in range(91)]})
+        #self.dfwlgsw = pd.DataFrame({'sw': [self.rawdf[self.rawdf.wl == x]['sw'].mean() for x in range(111)], 'wl': [x for x in range(111)]})
+        #self.dfyswgwl = pd.DataFrame({'wl': [self.rawdf[self.rawdf.ysw == x]['wl'].mean() for x in range(450)], 'ysw': [x for x in range(450)]})
+        #self.dfwlgysw = pd.DataFrame({'ysw': [self.rawdf[self.rawdf.wl == x]['ysw'].mean() for x in range(111)], 'wl': [x for x in range(111)]})
         return
+
+
+def group_relation(df, f1, f2, nozero=True):
+    if nozero:
+        df = df[(df[f1] > 0) & (df[f2] > 0)]
+    f1scope = [int(df[f1].min()), int(df[f1].max())]
+    f2scope = [int(df[f2].min()), int(df[f2].max())]
+    df1 = pd.DataFrame({f2+'_mean': [df[df[f1] == x][f2].mean() for x in range(f1scope[0], f1scope[1])],
+                        f1: [x for x in range(f1scope[0], f1scope[1])]})
+    df2 = pd.DataFrame({f1+'_mean': [df[df[f2] == x][f1].mean() for x in range(f2scope[0], f2scope[1])],
+                        f2: [x for x in range(f2scope[0], f2scope[1])]})
+    df1.fillna(0, inplace=True)
+    df2.fillna(0, inplace=True)
+    r = {}
+    r[f1+'_'+f2] = stats.pearsonr(df1[f1], df1[f2+'_mean'])[0]
+    r[f2+'_'+f1] = stats.pearsonr(df2[f2], df2[f1+'_mean'])[0]
+    r['df_'+f1+'_'+f2+'_mean'] = df1
+    r['df_'+f2+'_'+f1+'_mean'] = df2
+    return r
 
 
 def df_format(dfsource, intlen=2, declen=4, strlen=8):
