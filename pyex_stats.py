@@ -60,6 +60,50 @@ class ScoreData():
         return
 
 
+class CaclRelation():
+    def __init__(self):
+        self.pearson_r = {}
+        self.group_r = {}
+        self.df = None
+        self.fields = None
+        self.group_df = {}
+
+    def set_data(self, df, fields=''):
+        if len(fields) == 0:
+            self.fields = df.columns.values
+        else:
+            self.fields = fields
+        self.df = df
+
+    def run(self):
+        for i, f1 in enumerate(self.fields):
+            for j, f2 in enumerate(self.fields):
+                if f1 == f2:
+                    # self.pearson_r[(f1, f2)] = 1
+                    continue
+                if j < i:
+                    self.pearson_r[(f1, f2)] = stats.pearsonr(self.df[f1], self.df[f2])
+                self.group_r.update(self.g_relation(f1, f2))
+
+    def g_relation(self, f1, f2, nozero=True):
+        df = self.df[(self.df[f1] > 0) & (self.df[f2] > 0)] \
+             if nozero else self.df
+        f1scope = [int(df[f1].min()), int(df[f1].max())]
+        f2scope = [int(df[f2].min()), int(df[f2].max())]
+        df1 = pd.DataFrame({f2+'_mean': [df[df[f1] == x][f2].mean() for x in range(f1scope[0], f1scope[1])],
+                            f1: [x for x in range(f1scope[0], f1scope[1])]})
+        df2 = pd.DataFrame({f1+'_mean': [df[df[f2] == x][f1].mean() for x in range(f2scope[0], f2scope[1])],
+                            f2: [x for x in range(f2scope[0], f2scope[1])]})
+        df1.fillna(0, inplace=True)
+        df2.fillna(0, inplace=True)
+        r = {}
+        r[f1+'_'+f2] = stats.pearsonr(df1[f1], df1[f2+'_mean'])[0]
+        r[f2+'_'+f1] = stats.pearsonr(df2[f2], df2[f1+'_mean'])[0]
+        self.group_df['df_'+f1+'_'+f2+'_mean'] = df1
+        self.group_df['df_'+f2+'_'+f1+'_mean'] = df2
+        return r
+
+
 def group_relation(df, f1, f2, nozero=True):
     if nozero:
         df = df[(df[f1] > 0) & (df[f2] > 0)]
