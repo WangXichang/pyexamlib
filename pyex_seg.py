@@ -327,11 +327,11 @@ def cross_seg(df,    # source dataframe
               vfseglist=(40, 50, 60, 70, 80, 90, 100)  # segment for cross field
               ):
 
-    def float_str(x, d1, d2):
+    def format_float_str(x, d1, d2):
         d1 = d1 + d2 + 1
         return f'%{d1}.{d2}f' % x
 
-    def int_str(x, d):
+    def format_int_str(x, d):
         return f'%{d}d' % x
 
     display_step = 20
@@ -346,7 +346,7 @@ def cross_seg(df,    # source dataframe
     seglen = dfseg['seg'].count()
     for sv, step in zip(dfseg['seg'], range(seglen)):
         if (step % display_step == 0) | (step == seglen-1):
-            print('=' * int((step+1)/seglen * 30) + '>>' + f'{float_str((step+1)/seglen, 1, 2)}')
+            print('=' * int((step+1)/seglen * 30) + '>>' + f'{format_float_str((step+1)/seglen, 1, 2)}')
         for vfv in vfseglist:
             segcount = df.loc[(df[keyf] >= sv) & (df[vf] >= vfv), vf].count()
             vfseg[vfv].append(segcount)
