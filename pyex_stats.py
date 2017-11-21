@@ -71,38 +71,43 @@ class CaclRelation():
 
     def set_data(self, df, fields=''):
         if len(fields) == 0:
-            self.fields = df.columns.values
+            #self.fields = df.columns.values
+            print('must to set field names list!')
+            return
         else:
             self.fields = fields
-        self.df = df
+        self.df = df.copy(deep=True)
 
     def run(self):
+        if len(self.fields) == 0:
+            print('must to set field names list!')
+            return
         self.seg = ps.SegTable()
+        tempdf = self.df
         for i, _f1 in enumerate(self.fields):
             for j, _f2 in enumerate(self.fields):
-                # if _f1 == _f2:
-                    # self.pearson_r[(f1, f2)] = 1
-                #    continue
-                # if j < i:
-                #    self.pearson_r[(_f1, _f2)] = stats.pearsonr(self.df[_f1], self.df[_f2])[0]
-                # self.group_r.update(self.g_relation(_f1, _f2))
                 if i < j:
-                    self.g_relation(_f1, _f2)
-        self.corr = self.df.corr()
+                    print(f'calculating: {_f1}--{_f2}')
+                    df1, df2 = self.g_relation(tempdf, _f1, _f2)
+                    tempdf[_f1 + '_g_' + _f2] = \
+                        tempdf[_f1].apply(lambda x: df1.loc[x][0] if x in df1.index else None)
+                    tempdf[_f2 + '_g_' + _f1] = \
+                        tempdf[_f2].apply(lambda x: df2.loc[x][0] if x in df2.index else None)
+        self.corr = tempdf.corr()
 
-    def g_relation(self, _f1, _f2, nozero=True):
-        df = self.df[(self.df[_f1] > 0) & (self.df[_f2] > 0)] \
-             if nozero else self.df
-        f1scope = [int(df[_f1].min()), int(df[_f1].max())]
-        f2scope = [int(df[_f2].min()), int(df[_f2].max())]
-        df1 = pd.DataFrame({_f2 + '_mean': [df[df[_f1] == x][_f2].mean() for x in range(f1scope[0], f1scope[1])]},
+    def g_relation(self, indf, _field1, _field2, nozero=True):
+        df = self.df[(indf[_field1] > 0) & (indf[_field2] > 0)] \
+             if nozero else indf
+        f1scope = [int(df[_field1].min()), int(df[_field1].max())]
+        f2scope = [int(df[_field2].min()), int(df[_field2].max())]
+        df1 = pd.DataFrame({_field2 + '_mean': [df[df[_field1] == x][_field2].mean() for x in range(f1scope[0], f1scope[1])]},
                            index= [x for x in range(f1scope[0], f1scope[1])])
-        df2 = pd.DataFrame({_f1 + '_mean': [df[df[_f2] == x][_f1].mean() for x in range(f2scope[0], f2scope[1])]},
+        df2 = pd.DataFrame({_field1 + '_mean': [df[df[_field2] == x][_field1].mean() for x in range(f2scope[0], f2scope[1])]},
                            index=[x for x in range(f2scope[0], f2scope[1])])
         df1.fillna(0, inplace=True)
         df2.fillna(0, inplace=True)
-        self.df[_f1 + '_g_' + _f2] = df[_f1].apply(lambda x: df1.loc[x][0] if x in df1.index else None)
-        self.df[_f2 + '_g_' + _f1] = df[_f2].apply(lambda x: df2.loc[x][0] if x in df2.index else None)
+        # self.df[_f1 + '_g_' + _f2] = df[_f1].apply(lambda x: df1.loc[x][0] if x in df1.index else None)
+        # self.df[_f2 + '_g_' + _f1] = df[_f2].apply(lambda x: df2.loc[x][0] if x in df2.index else None)
         # r = {}
         # r[_f1 + '_' + _f2] = stats.pearsonr(self.df[_f1], self.df[_f1 + '_g_' + _f2])[0]
         # r[_f2 + '_' + _f1] = stats.pearsonr(self.df[_f2], self.df[_f2 + '_g_' + _f1])[0]
@@ -110,7 +115,7 @@ class CaclRelation():
         # r[f2+'_'+f1] = stats.pearsonr(df2[f2], df2[f1+'_mean'])[0]
         # self.group_df['df_'+_f1+'_'+_f2+'_mean'] = df1
         # self.group_df['df_'+_f2+'_'+_f1+'_mean'] = df2
-        return
+        return df1, df2
 
 
 def group_relation(df, f1, f2, nozero=True):
