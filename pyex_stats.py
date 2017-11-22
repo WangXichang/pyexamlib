@@ -76,16 +76,19 @@ class CaclRelation():
         self.df = df
 
     def run(self):
+        declen = 4
         for i, f1 in enumerate(self.fields):
             for j, f2 in enumerate(self.fields):
                 if f1 == f2:
                     # self.pearson_r[(f1, f2)] = 1
                     continue
                 if j < i:
-                    self.pearson_r[(f1, f2)] = stats.pearsonr(self.df[f1], self.df[f2])
-                self.group_r.update(self.g_relation(f1, f2))
+                    print(f'calculating: pearson relation({f1},{f2})')
+                    self.pearson_r[(f1, f2)] = round(stats.pearsonr(self.df[f1], self.df[f2])[0], declen)
+                print(f'calculating: group relation ({f1},{f2})')
+                self.group_r.update(self.g_relation(f1, f2, declen=declen))
 
-    def g_relation(self, f1, f2, nozero=True):
+    def g_relation(self, f1, f2, nozero=True, declen=4):
         df = self.df[(self.df[f1] > 0) & (self.df[f2] > 0)] \
              if nozero else self.df
         f1scope = [int(df[f1].min()), int(df[f1].max())]
@@ -97,8 +100,8 @@ class CaclRelation():
         df1.fillna(0, inplace=True)
         df2.fillna(0, inplace=True)
         r = {}
-        r[f1+'_'+f2] = stats.pearsonr(df1[f1], df1[f2+'_mean'])[0]
-        r[f2+'_'+f1] = stats.pearsonr(df2[f2], df2[f1+'_mean'])[0]
+        r[f1+'_'+f2] = round(stats.pearsonr(df1[f1], df1[f2+'_mean'])[0], declen)
+        r[f2+'_'+f1] = round(stats.pearsonr(df2[f2], df2[f1+'_mean'])[0], declen)
         self.group_df['df_'+f1+'_'+f2+'_mean'] = df1
         self.group_df['df_'+f2+'_'+f1+'_mean'] = df2
         return r
