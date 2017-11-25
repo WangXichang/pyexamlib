@@ -62,49 +62,60 @@ class ScoreData():
 
 class CaclRelation():
     def __init__(self):
-        self.pearson_r = {}
-        self.group_r = {}
+        # self.pearson_r = {}
+        # self.group_r = {}
         self.df = None
         self.fields = None
-        self.group_df = {}
+        # self.group_df = {}
+        self.corr = None
 
     def set_data(self, df, fields=''):
         if len(fields) == 0:
-            self.fields = df.columns.values
+            #self.fields = df.columns.values
+            print('must to set field names list!')
+            return
         else:
             self.fields = fields
-        self.df = df
+        self.df = df.copy(deep=True)
 
     def run(self):
-        declen = 4
-        for i, f1 in enumerate(self.fields):
-            for j, f2 in enumerate(self.fields):
-                if f1 == f2:
-                    # self.pearson_r[(f1, f2)] = 1
-                    continue
-                if j < i:
-                    print(f'calculating: pearson relation({f1},{f2})')
-                    self.pearson_r[(f1, f2)] = round(stats.pearsonr(self.df[f1], self.df[f2])[0], declen)
-                print(f'calculating: group relation ({f1},{f2})')
-                self.group_r.update(self.g_relation(f1, f2, declen=declen))
+        if len(self.fields) == 0:
+            print('must to set field names list!')
+            return
+        self.seg = ps.SegTable()
+        tempdf = self.df
+        for i, _f1 in enumerate(self.fields):
+            for j, _f2 in enumerate(self.fields):
+                if i < j:
+                    print(f'calculating: {_f1}--{_f2}')
+                    df1, df2 = self.g_relation(tempdf, _f1, _f2)
+                    tempdf[_f1 + '_g_' + _f2] = \
+                        tempdf[_f1].apply(lambda x: df1.loc[x][0] if x in df1.index else None)
+                    tempdf[_f2 + '_g_' + _f1] = \
+                        tempdf[_f2].apply(lambda x: df2.loc[x][0] if x in df2.index else None)
+        self.corr = tempdf.corr()
 
-    def g_relation(self, f1, f2, nozero=True, declen=4):
-        df = self.df[(self.df[f1] > 0) & (self.df[f2] > 0)] \
-             if nozero else self.df
-        f1scope = [int(df[f1].min()), int(df[f1].max())]
-        f2scope = [int(df[f2].min()), int(df[f2].max())]
-        df1 = pd.DataFrame({f2+'_mean': [df[df[f1] == x][f2].mean() for x in range(f1scope[0], f1scope[1])],
-                            f1: [x for x in range(f1scope[0], f1scope[1])]})
-        df2 = pd.DataFrame({f1+'_mean': [df[df[f2] == x][f1].mean() for x in range(f2scope[0], f2scope[1])],
-                            f2: [x for x in range(f2scope[0], f2scope[1])]})
+    def g_relation(self, indf, _field1, _field2, nozero=True):
+        df = self.df[(indf[_field1] > 0) & (indf[_field2] > 0)] \
+             if nozero else indf
+        f1scope = [int(df[_field1].min()), int(df[_field1].max())]
+        f2scope = [int(df[_field2].min()), int(df[_field2].max())]
+        df1 = pd.DataFrame({_field2 + '_mean': [df[df[_field1] == x][_field2].mean() for x in range(f1scope[0], f1scope[1])]},
+                           index= [x for x in range(f1scope[0], f1scope[1])])
+        df2 = pd.DataFrame({_field1 + '_mean': [df[df[_field2] == x][_field1].mean() for x in range(f2scope[0], f2scope[1])]},
+                           index=[x for x in range(f2scope[0], f2scope[1])])
         df1.fillna(0, inplace=True)
         df2.fillna(0, inplace=True)
-        r = {}
-        r[f1+'_'+f2] = round(stats.pearsonr(df1[f1], df1[f2+'_mean'])[0], declen)
-        r[f2+'_'+f1] = round(stats.pearsonr(df2[f2], df2[f1+'_mean'])[0], declen)
-        self.group_df['df_'+f1+'_'+f2+'_mean'] = df1
-        self.group_df['df_'+f2+'_'+f1+'_mean'] = df2
-        return r
+        # self.df[_f1 + '_g_' + _f2] = df[_f1].apply(lambda x: df1.loc[x][0] if x in df1.index else None)
+        # self.df[_f2 + '_g_' + _f1] = df[_f2].apply(lambda x: df2.loc[x][0] if x in df2.index else None)
+        # r = {}
+        # r[_f1 + '_' + _f2] = stats.pearsonr(self.df[_f1], self.df[_f1 + '_g_' + _f2])[0]
+        # r[_f2 + '_' + _f1] = stats.pearsonr(self.df[_f2], self.df[_f2 + '_g_' + _f1])[0]
+        # r[f1+'_'+f2] = stats.pearsonr(df1[f1], df1[f2+'_mean'])[0]
+        # r[f2+'_'+f1] = stats.pearsonr(df2[f2], df2[f1+'_mean'])[0]
+        # self.group_df['df_'+_f1+'_'+_f2+'_mean'] = df1
+        # self.group_df['df_'+_f2+'_'+_f1+'_mean'] = df2
+        return df1, df2
 
 
 def group_relation(df, f1, f2, nozero=True):
