@@ -9,6 +9,7 @@ from scipy import stats
 import pyex_lib as pl
 import pyex_seg as ps
 
+
 # ywmean = df.yw.mean(), wlmean = df.wl.mean()
 # m = math.sqrt(sum([(x - ywmean)**2 for x in df.yw]))*math.sqrt(sum([(x - wlmean)**2 for x in df.wl]))
 # c = sum([(x - ywmean)*(y - wlmean) for x, y in zip(df.yw, df.wl)])
@@ -55,7 +56,7 @@ class gkdf():
         cls.scoredf = pd.read_csv(filepath, sep='\t', index_col=0)
 
 
-class Relation():
+class Relation:
     """
     compute pearson and group relation coefficients
     pearsonr_all: pearson and group coefficients
@@ -96,7 +97,7 @@ class Relation():
         if len(self._fields) == 0:
             print('must to set field names list!')
             return
-        self.seg = ps.SegTable()
+        # self.seg = ps.SegTable()
         tempdf = self._dataframe[self._fields].copy(deep=True)
         # tempdf = self.df
         meandict = dict()
@@ -110,10 +111,10 @@ class Relation():
                     print(f'calculating: {_f1}--{_f2}')
                     meandict[(_f1, _f2)] = [self._dfmean(self._dataframe, _f2, x, _f1) for x in range(maxscoredict[_f2] + 1)]
                     meandict[(_f2, _f1)] = [self._dfmean(self._dataframe, _f1, x, _f2) for x in range(maxscoredict[_f1] + 1)]
-                    f1 = lambda x: meandict[(_f1, _f2)][x]
-                    f2 = lambda x: meandict[(_f2, _f1)][x]
-                    meanf1_for_f2 = list(map(f1, self._dataframe[_f2].values.astype(int)))
-                    meanf2_for_f1 = list(map(f2, self._dataframe[_f1].values.astype(int)))
+                    meanf1_for_f2 = list(map(lambda x: meandict[(_f1, _f2)][x],
+                                             self._dataframe[_f2].values.astype(int)))
+                    meanf2_for_f1 = list(map(lambda x: meandict[(_f2, _f1)][x],
+                                             self._dataframe[_f1].values.astype(int)))
                     tempdf['gmean_'+_f1 + '_for_' + _f2] = meanf1_for_f2
                     tempdf['gmean_'+_f2 + '_for_' + _f1] = meanf2_for_f1
                     self.group_r[_f1 + '_gr_' + _f2] = stats.pearsonr(tempdf[_f1].values, meanf2_for_f1)[0]
