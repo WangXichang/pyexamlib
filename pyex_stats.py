@@ -4,6 +4,7 @@
 import matplotlib.pyplot as plt
 import pandas as pd
 import numpy as np
+import time
 from scipy import stats
 import pyex_lib as pl
 import pyex_seg as ps
@@ -12,7 +13,7 @@ import pyex_seg as ps
 # m = math.sqrt(sum([(x - ywmean)**2 for x in df.yw]))*math.sqrt(sum([(x - wlmean)**2 for x in df.wl]))
 # c = sum([(x - ywmean)*(y - wlmean) for x, y in zip(df.yw, df.wl)])
 # pearsonr = c/m
-def relation(x, y):
+def show_relation(x, y):
     plt.scatter(x, y)
     return stats.pearsonr(x, y)[0]
 
@@ -45,31 +46,25 @@ class ScoreData():
     def __init__(self):
         self.fs_file = 'd:/work/newgk/shanghai1711/cj17b.csv'
         self.rawdf = None
-        self.dfwlgsw = None
-        self.dfswgwl = None
-        self.dfyswgwl = None
 
-    def read_rawdf(self):
+    def read_rawdf(self, filepath='d:/work/newgk/shanghai1711/cj17b.csv'):
         # self.df = pd.read_csv('d:/work/newgk/shanghai1711/cj17b.csv', sep='\t', index_col=0)
-        self.rawdf = pd.read_csv(self.fs_file, sep='\t', index_col=0)
-        #self.rawdf = self.rawdf[self.rawdf.ysw > 0]
-        #self.dfswgwl = pd.DataFrame({'wl': [self.rawdf[self.rawdf.sw == x]['wl'].mean() for x in range(91)], 'sw': [x for x in range(91)]})
-        #self.dfwlgsw = pd.DataFrame({'sw': [self.rawdf[self.rawdf.wl == x]['sw'].mean() for x in range(111)], 'wl': [x for x in range(111)]})
-        #self.dfyswgwl = pd.DataFrame({'wl': [self.rawdf[self.rawdf.ysw == x]['wl'].mean() for x in range(450)], 'ysw': [x for x in range(450)]})
-        #self.dfwlgysw = pd.DataFrame({'ysw': [self.rawdf[self.rawdf.wl == x]['ysw'].mean() for x in range(111)], 'wl': [x for x in range(111)]})
+        self.rawdf = pd.read_csv(filepath, sep='\t', index_col=0)
         return
 
 
-class CaclRelation():
+class Relation():
     def __init__(self):
-        # self.pearson_r = {}
-        # self.group_r = {}
+        self.pearson_r = None
+        # self.group_r = dict()
         self.df = None
         self.fields = None
-        # self.group_df = {}
-        self.corr = None
+        self.maxscore = 150
+        self.remove_small_samples = True
+        self.remove_zero_value = True
+        self.outdf = None
 
-    def set_data(self, df, fields=''):
+    def set_data(self, df, fields='', remove_small_samples=True, remove_zero_value=True):
         if len(fields) == 0:
             #self.fields = df.columns.values
             print('must to set field names list!')
@@ -77,63 +72,76 @@ class CaclRelation():
         else:
             self.fields = fields
         self.df = df.copy(deep=True)
+        self.remove_small_samples = remove_small_samples
+        self.remove_zero_value = remove_zero_value
+
+    def dfmean(self, df, field_value, value, field_mean):
+        tdf = df[df[field_value]==value][field_mean]
+        return tdf.mean() if tdf.count() > 10 else -1
 
     def run(self):
         if len(self.fields) == 0:
             print('must to set field names list!')
             return
         self.seg = ps.SegTable()
-        tempdf = self.df
+        tempdf = self.df[self.fields].copy(deep=True)
+        # tempdf = self.df
+        meandict = dict()
+        maxscoredict = dict()
+        for _f in self.fields:
+            # print(_f)
+            maxscoredict[_f] = int(self.df[_f].max())
         for i, _f1 in enumerate(self.fields):
             for j, _f2 in enumerate(self.fields):
-                if i < j:
+                if j > i:
+                    stime = time.clock()
                     print(f'calculating: {_f1}--{_f2}')
-                    df1, df2 = self.g_relation(tempdf, _f1, _f2)
-                    tempdf[_f1 + '_g_' + _f2] = \
-                        tempdf[_f1].apply(lambda x: df1.loc[x][0] if x in df1.index else None)
-                    tempdf[_f2 + '_g_' + _f1] = \
-                        tempdf[_f2].apply(lambda x: df2.loc[x][0] if x in df2.index else None)
-        self.corr = tempdf.corr()
-
-    def g_relation(self, indf, _field1, _field2, nozero=True):
-        df = self.df[(indf[_field1] > 0) & (indf[_field2] > 0)] \
-             if nozero else indf
-        f1scope = [int(df[_field1].min()), int(df[_field1].max())]
-        f2scope = [int(df[_field2].min()), int(df[_field2].max())]
-        df1 = pd.DataFrame({_field2 + '_mean': [df[df[_field1] == x][_field2].mean() for x in range(f1scope[0], f1scope[1])]},
-                           index= [x for x in range(f1scope[0], f1scope[1])])
-        df2 = pd.DataFrame({_field1 + '_mean': [df[df[_field2] == x][_field1].mean() for x in range(f2scope[0], f2scope[1])]},
-                           index=[x for x in range(f2scope[0], f2scope[1])])
-        df1.fillna(0, inplace=True)
-        df2.fillna(0, inplace=True)
-        # self.df[_f1 + '_g_' + _f2] = df[_f1].apply(lambda x: df1.loc[x][0] if x in df1.index else None)
-        # self.df[_f2 + '_g_' + _f1] = df[_f2].apply(lambda x: df2.loc[x][0] if x in df2.index else None)
-        # r = {}
-        # r[_f1 + '_' + _f2] = stats.pearsonr(self.df[_f1], self.df[_f1 + '_g_' + _f2])[0]
-        # r[_f2 + '_' + _f1] = stats.pearsonr(self.df[_f2], self.df[_f2 + '_g_' + _f1])[0]
-        # r[f1+'_'+f2] = stats.pearsonr(df1[f1], df1[f2+'_mean'])[0]
-        # r[f2+'_'+f1] = stats.pearsonr(df2[f2], df2[f1+'_mean'])[0]
-        # self.group_df['df_'+_f1+'_'+_f2+'_mean'] = df1
-        # self.group_df['df_'+_f2+'_'+_f1+'_mean'] = df2
-        return df1, df2
-
+                    '''
+                    meandict[(_f1, _f2)] = [self.df[self.df[_f2] == x][_f1].mean()
+                                            for x in range(maxscoredict[_f2] + 1)]
+                    meandict[(_f2, _f1)] = [self.df[self.df[_f1] == x][_f2].mean()
+                                            for x in range(maxscoredict[_f1] + 1)]'''
+                    meandict[(_f1, _f2)] = [self.dfmean(self.df, _f2, x, _f1) for x in range(maxscoredict[_f2]+1)]
+                    meandict[(_f2, _f1)] = [self.dfmean(self.df, _f1, x, _f2) for x in range(maxscoredict[_f1]+1)]
+                    f1 = lambda x: meandict[(_f1, _f2)][x]
+                    f2 = lambda x: meandict[(_f2, _f1)][x]
+                    meanf1_for_f2 = list(map(f1, self.df[_f2].values.astype(int)))
+                    meanf2_for_f1 = list(map(f2, self.df[_f1].values.astype(int)))
+                    tempdf['gmean_'+_f1 + '_for_' + _f2] = meanf1_for_f2
+                    tempdf['gmean_'+_f2 + '_for_' + _f1] = meanf2_for_f1
+                    # self.group_r[_f1 + '_gr_' + _f2] = stats.pearsonr(tempdf[_f1].values, meanf2_for_f1)[0]
+                    # self.group_r[_f2 + '_gr_' + _f1] = stats.pearsonr(tempdf[_f2].values, meanf1_for_f2)[0]
+                    print(f'consume time = {round(time.clock()-stime,2)}')
+        if self.remove_small_samples:
+            self.pearson_r = tempdf[tempdf > 0].corr()
+        else:
+            self.pearson_r = tempdf[tempdf != 0].corr()
+        self.outdf = tempdf
+        return
 
 def group_relation(df, f1, f2, nozero=True):
+    """
+    :param df: input dataframe
+    :param f1: scorefield1
+    :param f2: scorefield2
+    :param nozero:  remove zero values in field1, field2
+    :return: dict['f1_f2_grouprelation',  'f2_f1_grouprelation']
+    """
     if nozero:
         df = df[(df[f1] > 0) & (df[f2] > 0)]
     f1scope = [int(df[f1].min()), int(df[f1].max())]
     f2scope = [int(df[f2].min()), int(df[f2].max())]
-    df1 = pd.DataFrame({f2+'_mean': [df[df[f1] == x][f2].mean() for x in range(f1scope[0], f1scope[1])],
-                        f1: [x for x in range(f1scope[0], f1scope[1])]})
-    df2 = pd.DataFrame({f1+'_mean': [df[df[f2] == x][f1].mean() for x in range(f2scope[0], f2scope[1])],
-                        f2: [x for x in range(f2scope[0], f2scope[1])]})
+    df1 = pd.DataFrame({f2+'_mean': [df[df[f1] == x][f2].mean() for x in range(*f1scope)],
+                        f1: [x for x in range(*f1scope)]})
+    df2 = pd.DataFrame({f1+'_mean': [df[df[f2] == x][f1].mean() for x in range(*f2scope)],
+                        f2: [x for x in range(*f2scope)]})
     df1.fillna(0, inplace=True)
     df2.fillna(0, inplace=True)
-    r = {}
+    r = dict()
     r[f1+'_'+f2] = stats.pearsonr(df1[f1], df1[f2+'_mean'])[0]
     r[f2+'_'+f1] = stats.pearsonr(df2[f2], df2[f1+'_mean'])[0]
-    r['df_'+f1+'_'+f2+'_mean'] = df1
-    r['df_'+f2+'_'+f1+'_mean'] = df2
+    # r['df_'+f1+'_'+f2+'_mean'] = df1
+    # r['df_'+f2+'_'+f1+'_mean'] = df2
     return r
 
 
@@ -164,26 +172,30 @@ def ref_stm(df, fkey, f1, f2, adj_rate_points=(0.35, 0.75)):
         f2count = segf2.loc[segf2[f2+'_percent'] >= p, f2+'_cumsum'].head(1)['seg']
 
 
-def cross_seg(df, keyf,
-              vf, vfseglist=(50, 60, 70, 80, 90, 100)):
+def cross_seg(source_dataframe,
+              key_field,
+              cross_field,
+              cross_seg_list=(50, 60, 70, 80, 90, 100)):
     segmodel = ps.SegTable()
-    segmodel.set_data(df, keyf)
-    segmodel.set_parameters(segmax=max(df[keyf]))
+    segmodel.set_data(source_dataframe, key_field)
+    segmodel.set_parameters(segmax=max(source_dataframe[key_field]))
     segmodel.run()
     dfseg = segmodel.segdf
-    dfcount = dfseg[keyf+'_cumsum'].tail(1).values[0]
-    vfseg = {x:[] for x in vfseglist}
-    vfper = {x:[] for x in vfseglist}
+    dfcount = dfseg[key_field + '_cumsum'].tail(1).values[0]
+    vfseg = {x:[] for x in cross_seg_list}
+    vfper = {x:[] for x in cross_seg_list}
     seglen = dfseg['seg'].count()
     for sv, step in zip(dfseg['seg'], range(seglen)):
         if (step % 20 == 0) | (step == seglen-1):
             print('='* int((step+1)/seglen * 30) + '>>' + f'{float_str((step+1)/seglen, 1, 2)}')
         segv = []
-        for vfv in vfseglist:
-            segcount = df.loc[(df[keyf] >= sv) & (df[vf] >= vfv), vf].count()
+        for vfv in cross_seg_list:
+            segcount = source_dataframe.loc[(source_dataframe[key_field] >= sv) & (source_dataframe[cross_field] >= vfv), cross_field].count()
             vfseg[vfv].append(segcount)
             vfper[vfv].append(segcount/dfcount)
-    for vs in vfseglist:
-        dfseg[vf + str(vs) + '_cumsum'] = vfseg[vs]
-        dfseg[vf + str(vs) + '_percent'] = vfper[vs]
+    for vs in cross_seg_list:
+        dfseg[cross_field + str(vs) + '_cumsum'] = vfseg[vs]
+        dfseg[cross_field + str(vs) + '_percent'] = vfper[vs]
     return dfseg
+
+
