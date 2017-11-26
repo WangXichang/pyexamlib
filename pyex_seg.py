@@ -321,10 +321,10 @@ class SegTable(object):
 # SegTable class end
 
 
-def cross_seg(df,    # source dataframe
-              keyf,  # key field to calculate segment
-              vf,  # cross field, calculate count for >=keyf_seg & >=vf_seg
-              vfseglist=(40, 50, 60, 70, 80, 90, 100)  # segment for cross field
+def cross_seg(source_df,  # source dataframe
+              key_field,  # key field to calculate segment
+              cross_field,  # cross field, calculate count for >=keyf_seg & >=vf_seg
+              cross_seg_list=(40, 50, 60, 70, 80, 90, 100)  # segment for cross field
               ):
 
     def format_float_str(x, d1, d2):
@@ -336,22 +336,22 @@ def cross_seg(df,    # source dataframe
 
     display_step = 20
     segmodel = SegTable()
-    segmodel.set_data(df, keyf)
-    segmodel.set_parameters(segmax=max(df[keyf]))
+    segmodel.set_data(source_df, key_field)
+    segmodel.set_parameters(segmax=max(source_df[key_field]))
     segmodel.run()
     dfseg = segmodel.segdf
-    dfcount = dfseg[keyf+'_cumsum'].tail(1).values[0]
-    vfseg = {x: [] for x in vfseglist}
-    vfper = {x: [] for x in vfseglist}
+    dfcount = dfseg[key_field + '_cumsum'].tail(1).values[0]
+    vfseg = {x: [] for x in cross_seg_list}
+    vfper = {x: [] for x in cross_seg_list}
     seglen = dfseg['seg'].count()
     for sv, step in zip(dfseg['seg'], range(seglen)):
         if (step % display_step == 0) | (step == seglen-1):
             print('=' * int((step+1)/seglen * 30) + '>>' + f'{format_float_str((step+1)/seglen, 1, 2)}')
-        for vfv in vfseglist:
-            segcount = df.loc[(df[keyf] >= sv) & (df[vf] >= vfv), vf].count()
+        for vfv in cross_seg_list:
+            segcount = source_df.loc[(source_df[key_field] >= sv) & (source_df[cross_field] >= vfv), cross_field].count()
             vfseg[vfv].append(segcount)
             vfper[vfv].append(segcount/dfcount)
-    for vs in vfseglist:
-        dfseg[vf + str(vs) + '_cumsum'] = vfseg[vs]
-        dfseg[vf + str(vs) + '_percent'] = vfper[vs]
+    for vs in cross_seg_list:
+        dfseg[cross_field + str(vs) + '_cumsum'] = vfseg[vs]
+        dfseg[cross_field + str(vs) + '_percent'] = vfper[vs]
     return dfseg
