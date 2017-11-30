@@ -34,7 +34,11 @@ def test_model(name='plt', df=None,
         pltmodel.set_parameters(rawpoints, stdpoints)
         pltmodel.run()
         pltmodel.report()
-        pltmodel.plot('raw')   # plot raw score figure, else 'std', 'model'
+        pltmodel.plot('model')   # plot raw score figure, else 'std', 'model'
+        kscount = pltmodel.outdf.count()[0]
+        shiftdown = pltmodel.outdf[pltmodel.outdf[fieldnames+'_plt'] <
+                                   pltmodel.outdf[fieldnames]].count()[0]
+        print(kscount,'\t', shiftdown,'\t', round(shiftdown/kscount,6))
         return pltmodel
     if name == 'zt':
         zm = ZscoreByTable()
@@ -183,8 +187,8 @@ class PltScoreModel(ScoreTransformModel):
         # check and set scorefields
         if not scorefieldnamelist:
             self.scorefields = [s for s in dfname]
-        elif type(scorefieldnamelist) != list:
-            print('scorefields set fail!\n not a list!')
+        elif type(scorefieldnamelist) not in [list, tuple]:
+            print('scorefields set fail!\n not a list/tuple!')
             return
         elif sum([1 if sf in dfname else 0 for sf in scorefieldnamelist]) != len(scorefieldnamelist):
             print('scorefields set fail!\n field must in rawdf.columns!')
@@ -193,11 +197,11 @@ class PltScoreModel(ScoreTransformModel):
             self.scorefields = scorefieldnamelist
 
     def set_parameters(self, rawscorepercent=None, stdscorepoints=None):
-        if (type(rawscorepercent) != list) | (type(stdscorepoints) != list):
-            print('rawscorepoints or stdscorepoints is not list type!')
+        if (type(rawscorepercent) not in [list, tuple]) | (type(stdscorepoints) not in [list, tuple]):
+            print('rawscorepoints or stdscorepoints is not list/tuple type!')
             return
         if len(rawscorepercent) != len(stdscorepoints):
-            print('len is not same for rawscorepoints and stdscorepoint list!')
+            print('the length of rawscorepoints is not same as stdscorepoints!')
             return
         self.__rawScorePercentPoints = rawscorepercent
         self.__stdScorePoints = stdscorepoints
@@ -206,7 +210,8 @@ class PltScoreModel(ScoreTransformModel):
         if not self.scorefields:
             print('no score field assign in scorefields!')
             return False
-        if (type(self.__rawScorePercentPoints) != list) | (type(self.__stdScorePoints) != list):
+        if (type(self.__rawScorePercentPoints) not in [list, tuple]) | \
+                (type(self.__stdScorePoints) not in [list, tuple]):
             print('rawscorepoints or stdscorepoints is not list type!')
             return False
         if (len(self.__rawScorePercentPoints) != len(self.__stdScorePoints)) | \
@@ -308,7 +313,7 @@ class PltScoreModel(ScoreTransformModel):
             print('fail to initializing !')
             return
         # transform score
-        self.outdf[scorefieldname + '_plt'] = \
+        self.outdf.loc[:, scorefieldname + '_plt'] = \
             self.outdf[scorefieldname].apply(self.__getcore)
 
     def __plotmodel(self):

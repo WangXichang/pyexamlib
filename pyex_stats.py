@@ -52,17 +52,19 @@ class gkdf():
     def __init__(self):
         self.df17lk = None
         self.df17wk = None
+        self.wkdatafile = 'f:/studies/xkdata/gkscore/wzxj2017.csv'
+        self.lkdatafile = 'f:/studies/xkdata/gkscore/lzxj2017.csv'
 
     def read_17lk(self):
-        self.df17lk = pd.read_csv('d:/work/newgk/gkdata/lkcj17.csv', sep='\t',
-                              usecols=['yw', 'sx', 'wy', 'wl', 'hx', 'sw'])
+        self.df17lk = pd.read_csv(self.lkdatafile, # 'd:/work/newgk/gkdata/lkcj17.csv', sep='\t',
+                              usecols=['wl', 'hx', 'sw'])
         self.df17lk.loc[:, 'wl100'] = self.df17lk['wl'].apply(lambda x: self.xround(x*10/11))
         self.df17lk.loc[:, 'sw100'] = self.df17lk['sw'].apply(lambda x: self.xround(x*10/9))
         self.smoothdata(self.df17lk, 'wl100')
         self.smoothdata(self.df17lk, 'sw100')
 
     def read_17wk(self):
-        self.df17wk = pd.read_csv('d:/work/newgk/gkdata/wzxj2017.csv',
+        self.df17wk = pd.read_csv(self.wkdatafile,
                                  usecols=['zz', 'ls', 'dl'])
         self.df17wk = self.df17wk.applymap(lambda x: self.xround(x))
         self.smoothdata(self.df17wk, 'dl')
