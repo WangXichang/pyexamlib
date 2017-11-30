@@ -5,7 +5,7 @@ import pandas as pd
 import numpy as np
 import math
 import time
-# import py2ee_seg0906 as pg
+import pyex_seg as psg
 import pyex_lib as pl
 
 
@@ -15,16 +15,21 @@ def exp_scoredf_normal(mean=70, std=10, maxscore=100, minscore=0, samples=100000
                          for x in range(samples)]})
 
 
-def test_model(name='plt', df=None, fieldnames='sf'):
+def test_model(name='plt', df=None,
+               fieldnames='sf',
+               rawpoints=[0, .15, .30, .50, .70, .85, 1.00],
+               stdpoints=[20, 30, 45, 60, 75, 90, 100]  # std=15
+               ):
     if type(df) != pd.DataFrame:
         scoredf = exp_scoredf_normal()
     else:
         scoredf = df
     if name == 'plt':
         pltmodel = PltScoreModel()
-        rawpoints = [0, 0.023, 0.169, 0.50, 0.841, 0.977, 1]   # normal ratio
-        # rawpoints = [0, .15, .30, .50, .70, .85, 1.00]    # ajust ratio
-        stdpoints = [40, 50, 65, 80, 95, 110, 120]  # std=15
+        #rawpoints = [0, 0.023, 0.169, 0.50, 0.841, 0.977, 1]   # normal ratio
+        #rawpoints = [0, .15, .30, .50, .70, .85, 1.00]    # ajust ratio
+        #stdpoints = [40, 50, 65, 80, 95, 110, 120]  # std=15
+        #stdpoints = [20, 30, 45, 60, 75, 90, 100]  # std=15
         pltmodel.set_data(scoredf, [fieldnames])
         pltmodel.set_parameters(rawpoints, stdpoints)
         pltmodel.run()
@@ -398,7 +403,7 @@ class ZscoreByTable(ScoreTransformModel):
     @staticmethod
     def __getsegtable(df, maxscore, minscore, scorefieldnamelist):
         """no sort problem in this segtable usage"""
-        seg = pl.SegTable()
+        seg = psg.SegTable()
         seg.set_data(df, scorefieldnamelist)
         seg.set_parameters(segmax=maxscore, segmin=minscore)
         seg.run()

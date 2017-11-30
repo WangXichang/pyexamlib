@@ -49,11 +49,41 @@ class gkdf():
     read gk17 data from csv
     include kl, ysw, wl, hx, sw
     """
-    scoredf = dict()
+    def __init__(self):
+        self.df17lk = None
+        self.df17wk = None
 
-    @classmethod
-    def read_rawdf(cls, filepath='d:/work/newgk/shanghai1711/cj17b.csv'):
-        cls.scoredf = pd.read_csv(filepath, sep='\t', index_col=0)
+    def read_17lk(self):
+        self.df17lk = pd.read_csv('d:/work/newgk/gkdata/lkcj17.csv', sep='\t',
+                              usecols=['yw', 'sx', 'wy', 'wl', 'hx', 'sw'])
+        self.df17lk.loc[:, 'wl100'] = self.df17lk['wl'].apply(lambda x: self.xround(x*10/11))
+        self.df17lk.loc[:, 'sw100'] = self.df17lk['sw'].apply(lambda x: self.xround(x*10/9))
+        self.smoothdata(self.df17lk, 'wl100')
+        self.smoothdata(self.df17lk, 'sw100')
+
+    def read_17wk(self):
+        self.df17wk = pd.read_csv('d:/work/newgk/gkdata/wzxj2017.csv',
+                                 usecols=['zz', 'ls', 'dl'])
+        self.df17wk = self.df17wk.applymap(lambda x: self.xround(x))
+        self.smoothdata(self.df17wk, 'dl')
+
+    def xround(self,x):
+        if np.random.randint(0, 1000) % 2 ==0:
+            return int(np.floor(x))
+        else:
+            return int(np.ceil(x))
+
+    def smoothdata(self,df, field):
+        tplist = df[field].tolist()
+        for i in range(len(tplist)):
+            if (i > 0) & (tplist[i]>2000):
+                if tplist[i] < tplist[i-1] * 1.2:
+                    tplist[i] = tplist[i-1]
+            if (i > 0) & (i < len(df)-1):
+                if (tplist[i] == 0) & (tplist[i-1]*tplist[i+1] != 0):
+                    tplist[i]=tplist[i-1]
+        df.loc[:, field] = tplist
+        return df
 
 
 class Relation:
