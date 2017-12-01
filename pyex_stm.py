@@ -224,7 +224,8 @@ class PltScoreModel(ScoreTransformModel):
         if not super().run():
             return
         # create outdf
-        self.outdf = self.rawdf[self.scorefields]
+        self.outdf = self.rawdf[self.scorefields].copy()
+        print('start calculating ......')
         # transform score on each field
         for i in range(len(self.scorefields)):
             self.__pltrun(self.scorefields[i])
@@ -232,11 +233,11 @@ class PltScoreModel(ScoreTransformModel):
     def report(self):
         self.__formulastr = ['{0}*(x-{1})+{2}'.format(x[0], x[1], x[2])
                              for x in self.__pltCoeff.values()]
-        print('raw score percent points:', self.__rawScorePercentPoints)
-        print('raw score points:', self.__rawScorePoints__)
-        print('std score points:', self.__stdScorePoints)
-        print('coefficent:', self.__pltCoeff)
-        print('formula:', self.__formulastr)
+        print('raw percent points:', self.__rawScorePercentPoints)
+        print('raw  score  points:', self.__rawScorePoints__)
+        print('std  score  points:', self.__stdScorePoints)
+        print('transform   coeffi:', self.__pltCoeff)
+        print('transform  formula:', self.__formulastr)
 
     def plot(self, mode='model'):
         if mode == 'model':
@@ -313,11 +314,12 @@ class PltScoreModel(ScoreTransformModel):
             print('fail to initializing !')
             return
         # transform score
-        self.outdf.loc[:, scorefieldname + '_plt'] = \
-            self.outdf[scorefieldname].apply(self.__getcore)
+        tempdf = self.outdf[scorefieldname]
+        self.outdf.loc[:, scorefieldname + '_plt'] = tempdf.apply(self.__getcore)
+        #    self.outdf.loc[:, scorefieldname].apply(self.__getcore)
 
     def __plotmodel(self):
-        plt.figure('Piecewise Linear Score Transform: {0}'.format(self.scorefields))
+        plt.figure('Piecewise Linear Score Transform_{0}'.format(self.scorefields))
         plen = len(self.__rawScorePoints__)
         plt.xlim(self.__rawScorePoints__[0], self.__rawScorePoints__[plen - 1])
         plt.ylim(self.__stdScorePoints[0], self.__stdScorePoints[plen-1])
