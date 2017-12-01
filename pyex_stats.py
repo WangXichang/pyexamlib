@@ -181,6 +181,4 @@ def group_relation(df, f1, f2, nozero=True):
     r = dict()
     r[f1+'_'+f2] = stats.pearsonr(df1[f1], df1[f2+'_mean'])[0]
     r[f2+'_'+f1] = stats.pearsonr(df2[f2], df2[f1+'_mean'])[0]
-    # r['df_'+f1+'_'+f2+'_mean'] = df1
-    # r['df_'+f2+'_'+f1+'_mean'] = df2
     return r
