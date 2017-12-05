@@ -319,7 +319,7 @@ class PltScoreModel(ScoreTransformModel):
         #    self.outdf.loc[:, scorefieldname].apply(self.__getcore)
 
     def __plotmodel(self):
-        plt.figure('Piecewise Linear Score Transform_{0}'.format(self.scorefields))
+        plt.figure(f'Piecewise Linear Score Transform_{self.scorefields}_{self.__stdScorePoints}')
         plen = len(self.__rawScorePoints__)
         plt.xlim(self.__rawScorePoints__[0], self.__rawScorePoints__[plen - 1])
         plt.ylim(self.__stdScorePoints[0], self.__stdScorePoints[plen-1])
@@ -327,7 +327,8 @@ class PltScoreModel(ScoreTransformModel):
         plt.plot([self.__rawScorePoints__[0], self.__rawScorePoints__[plen - 1]],
                  [self.__rawScorePoints__[0], self.__rawScorePoints__[plen - 1]],
                  )
-        plt.xlabel('piecewise linear transform model')
+        plt.xlabel(f'raw score ({self.scorefields})')
+        plt.ylabel(f'transformed score ({self.scorefields})')
         plt.show()
         return
 

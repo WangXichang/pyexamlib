@@ -19,9 +19,9 @@ class Data:
         self.df16lk = None
         self.df15wk = None
         self.df15lk = None
-        self.std_20 = (20, 30, 45, 60, 75, 90, 100)
-        self.std_30 = (30, 38, 41, 65, 79, 92, 100)
-        self.std_40 = (40, 48, 59, 70, 81, 92, 100)
+        self.std_20 = [20, 30, 45, 60, 75, 90, 100]
+        self.std_30 = [30, 38, 41, 65, 79, 92, 100]
+        self.std_40 = [40, 48, 59, 70, 81, 92, 100]
 
     def set_office_data(self):
         self.pf15 = 'f:/studies/xkdata/gkscore/2015/csv/*.csv'
