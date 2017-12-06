@@ -18,7 +18,8 @@ def exp_scoredf_normal(mean=70, std=10, maxscore=100, minscore=0, samples=100000
 def test_model(name='plt', df=None,
                fieldnames='sf',
                rawpoints=[0, .15, .30, .50, .70, .85, 1.00],
-               stdpoints=[20, 30, 45, 60, 75, 90, 100]  # std=15
+               stdpoints=[20, 30, 45, 60, 75, 90, 100],  # std=15
+               dispmodel=False
                ):
     if type(df) != pd.DataFrame:
         scoredf = exp_scoredf_normal()
@@ -34,7 +35,8 @@ def test_model(name='plt', df=None,
         pltmodel.set_parameters(rawpoints, stdpoints)
         pltmodel.run()
         pltmodel.report()
-        pltmodel.plot('model')   # plot raw score figure, else 'std', 'model'
+        if dispmodel:
+            pltmodel.plot('model')   # plot raw score figure, else 'std', 'model'
         kscount = pltmodel.outdf.count()[0]
         shiftdown = pltmodel.outdf[pltmodel.outdf[fieldnames+'_plt'] <
                                    pltmodel.outdf[fieldnames]].count()[0]

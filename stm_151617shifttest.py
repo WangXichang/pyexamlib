@@ -19,6 +19,7 @@ class Data:
         self.df16lk = None
         self.df15wk = None
         self.df15lk = None
+        self.std_00 = [0, 15, 30, 50, 70, 85, 100]
         self.std_20 = [20, 30, 45, 60, 75, 90, 100]
         self.std_30 = [30, 38, 41, 65, 79, 92, 100]
         self.std_40 = [40, 48, 59, 70, 81, 92, 100]
@@ -78,3 +79,25 @@ class Data:
             md = stm.test_model(df=df, fieldnames=fs, stdpoints=stdpoints)
             mddict[fs] = md
         return mddict
+
+    def test_shift_all(self, df, field: str):
+        mdd00 = self.test_shift(df, fieldlist=[field], stdpoints=self.std_00)[field]
+        mdd20 = self.test_shift(df, fieldlist=[field], stdpoints=self.std_20)[field]
+        mdd30 = self.test_shift(df, fieldlist=[field], stdpoints=self.std_30)[field]
+        mdd40 = self.test_shift(df, fieldlist=[field], stdpoints=self.std_40)[field]
+        import pyex_seg as psg
+        seg = psg.SegTable()
+        seg.set_parameters(segmax=100,segmin=1)
+        seg.set_data(mdd00.outdf[[field+'_plt']].astype(int), field+'_plt')
+        seg.run()
+        dfseg = seg.segdf.copy(deep=True)
+        seg.set_data(mdd20.outdf[[field+'_plt']].astype(int), field+'_plt')
+        seg.run()
+        dfseg[field+'_20_count'] = seg.segdf[field+'_plt_count']
+        seg.set_data(mdd30.outdf[[field+'_plt']].astype(int), field+'_plt')
+        seg.run()
+        dfseg[field+'_30_count'] = seg.segdf[field+'_plt_count']
+        seg.set_data(mdd40.outdf[[field+'_plt']].astype(int), field+'_plt')
+        seg.run()
+        dfseg[field+'_40_count'] = seg.segdf[field+'_plt_count']
+        return (dfseg, mdd00, mdd20, mdd30, mdd40)
