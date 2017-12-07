@@ -88,7 +88,7 @@ class Data:
         import pyex_seg as psg
         seg = psg.SegTable()
         seg.set_parameters(segmax=100,segmin=1)
-        seg.set_data(mdd00.outdf[[field+'_plt']].astype(int), field+'_plt')
+        seg.set_data(mdd00.outdf[[field, field+'_plt']].astype(int), [field, field+'_plt'])
         seg.run()
         dfseg = seg.segdf.copy(deep=True)
         seg.set_data(mdd20.outdf[[field+'_plt']].astype(int), field+'_plt')
@@ -100,4 +100,34 @@ class Data:
         seg.set_data(mdd40.outdf[[field+'_plt']].astype(int), field+'_plt')
         seg.run()
         dfseg[field+'_40_count'] = seg.segdf[field+'_plt_count']
+        '''
+        self.smooth(dfseg, field+'_count')
+        self.smooth(dfseg, field+'_plt_count')
+        self.smooth(dfseg, field+'_20_count', minindex=20)
+        self.smooth(dfseg, field+'_30_count', minindex=30)
+        self.smooth(dfseg, field+'_40_count', minindex=40)'''
         return (dfseg, mdd00, mdd20, mdd30, mdd40)
+
+    def smooth(self, df, field, mode='backward', maxindex=99, minindex=20):
+        for index, rows in df.iterrows():
+            if index > maxindex:
+                continue
+            if index < minindex:
+                continue
+            if (index>0) & ((rows[field] == 0) | (rows[field] > df.loc[index+1,field]*1.8)) & (mode == 'backward'):
+                print(index, rows[field], df.loc[index+1,field])
+                df.loc[index, field] = df.loc[index+1, field]
+            if (index in range(1, len(df)-1)) & (rows[field] == 0) & (mode == 'average'):
+                rows[field] = int((df.loc[index-1,field] + df.loc[index-1,field])/2)
+        return df
+
+    def plot_multi(self, df ,sortfield='seg',
+                   fieldlist=['sw100_count',
+                              'sw100_plt_count',
+                              'sw100_20_count',
+                              'sw100_30_count',
+                              'sw100_40_count']):
+        if 'seg' in df.columns:
+            df.sort_values(sortfield)[fieldlist].plot.line()
+        else:
+            df[fieldlist].plot.line()
