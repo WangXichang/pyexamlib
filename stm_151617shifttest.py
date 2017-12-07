@@ -24,6 +24,11 @@ class Data:
         self.std_30 = [30, 38, 41, 65, 79, 92, 100]
         self.std_40 = [40, 48, 59, 70, 81, 92, 100]
 
+        self.stdpoints00 = [0, 10, 30, 50, 70, 90, 100]  # std=20
+        self.stdpoints20 = [20, 28, 44, 60, 76, 92, 100]  # std=16
+        self.stdpoints30 = [30, 43, 51, 65, 79, 93, 100]  # std=14
+        self.stdpoints40 = [40, 46, 58, 70, 82, 94, 100]  # std=12
+
     def set_office_data(self):
         self.pf15 = 'f:/studies/xkdata/gkscore/2015/csv/*.csv'
         self.pf16 = 'f:/studies/xkdata/gkscore/2016/csv/*.csv'
@@ -81,32 +86,44 @@ class Data:
         return mddict
 
     def test_shift_all(self, df, field: str):
-        mdd00 = self.test_shift(df, fieldlist=[field], stdpoints=self.std_00)[field]
-        mdd20 = self.test_shift(df, fieldlist=[field], stdpoints=self.std_20)[field]
-        mdd30 = self.test_shift(df, fieldlist=[field], stdpoints=self.std_30)[field]
-        mdd40 = self.test_shift(df, fieldlist=[field], stdpoints=self.std_40)[field]
+        mdd00 = self.test_shift(df, fieldlist=[field], stdpoints=self.stdpoints00)[field]
+        mdd20 = self.test_shift(df, fieldlist=[field], stdpoints=self.stdpoints20)[field]
+        mdd30 = self.test_shift(df, fieldlist=[field], stdpoints=self.stdpoints30)[field]
+        mdd40 = self.test_shift(df, fieldlist=[field], stdpoints=self.stdpoints40)[field]
         import pyex_seg as psg
         seg = psg.SegTable()
         seg.set_parameters(segmax=100,segmin=1)
-        seg.set_data(mdd00.outdf[[field, field+'_plt']].astype(int), [field, field+'_plt'])
+        seg.set_data(mdd00.outdf[[field, field+'_plt']].apply(round).astype(int), [field, field+'_plt'])
         seg.run()
-        dfseg = seg.segdf.copy(deep=True)
-        seg.set_data(mdd20.outdf[[field+'_plt']].astype(int), field+'_plt')
+        dfseg = seg.segdf[['seg', field+'_count', field+'_plt_count']].copy(deep=True)
+        # dfseg.drop(labels=[field+'_cumsum', field+'_percent',
+        #                   field+'_plt_cumsum', field+'_plt_percent'], axis=1, inplace=True)
+
+        seg.set_data(mdd20.outdf[[field+'_plt']].apply(round).astype(int), field+'_plt')
         seg.run()
         dfseg[field+'_20_count'] = seg.segdf[field+'_plt_count']
-        seg.set_data(mdd30.outdf[[field+'_plt']].astype(int), field+'_plt')
+
+        seg.set_data(mdd30.outdf[[field+'_plt']].apply(round).astype(int), field+'_plt')
         seg.run()
         dfseg[field+'_30_count'] = seg.segdf[field+'_plt_count']
-        seg.set_data(mdd40.outdf[[field+'_plt']].astype(int), field+'_plt')
+
+        seg.set_data(mdd40.outdf[[field+'_plt']].apply(round).astype(int), field+'_plt')
         seg.run()
         dfseg[field+'_40_count'] = seg.segdf[field+'_plt_count']
-        '''
-        self.smooth(dfseg, field+'_count')
-        self.smooth(dfseg, field+'_plt_count')
-        self.smooth(dfseg, field+'_20_count', minindex=20)
-        self.smooth(dfseg, field+'_30_count', minindex=30)
-        self.smooth(dfseg, field+'_40_count', minindex=40)'''
+
+        import matplotlib.pyplot as plt
+        ax1 = plt.subplot(221)
+
         return (dfseg, mdd00, mdd20, mdd30, mdd40)
+
+    def smooth_field(self, df, seg_field, count_field, scope:list):
+        lastindex = df.index[0]
+        for index, row in df.iterrows():
+            if index in range(scope[0], scope[1]):
+                if row[count_field] == 0:
+                    df.loc[index, count_field] = df.loc[lastindex, count_field]
+                    print(index,lastindex)
+            lastindex = index
 
     def smooth(self, df, field, mode='backward', maxindex=99, minindex=20):
         for index, rows in df.iterrows():

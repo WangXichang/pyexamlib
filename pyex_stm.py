@@ -17,8 +17,13 @@ def exp_scoredf_normal(mean=70, std=10, maxscore=100, minscore=0, samples=100000
 
 def test_model(name='plt', df=None,
                fieldnames='sf',
-               rawpoints=[0, .15, .30, .50, .70, .85, 1.00],
-               stdpoints=[20, 30, 45, 60, 75, 90, 100],  # std=15
+               rawpoints=[0, 0.0229, 0.1596, 0.50, 0.8423, 0.9774, 1.00],
+               #rawpoints=[0, .15, .30, .50, .70, .85, 1.00],
+               stdpoints=[20, 30, 45, 60, 75, 90, 100],  # std=15 old version
+               # stdpoints=[0, 10, 30, 50, 70, 90, 100],  # std=20
+               # stdpoints=[20, 28, 44, 60, 76, 92, 100],  # std=16
+               # stdpoints=[30, 43, 51, 65, 79, 93, 100],  # std=14
+               # stdpoints=[40, 46, 58, 70, 82, 94, 100],  # std=12
                dispmodel=False
                ):
     if type(df) != pd.DataFrame:
@@ -204,6 +209,7 @@ class PltScoreModel(ScoreTransformModel):
             return
         if len(rawscorepercent) != len(stdscorepoints):
             print('the length of rawscorepoints is not same as stdscorepoints!')
+            print(f'raw={rawscorepercent} len={len(rawscorepercent)}, std={stdscorepoints} len={len(stdscorepoints)}')
             return
         self.__rawScorePercentPoints = rawscorepercent
         self.__stdScorePoints = stdscorepoints
