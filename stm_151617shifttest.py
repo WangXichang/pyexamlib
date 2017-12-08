@@ -73,15 +73,16 @@ class Data:
             self.df17wk = self.df17wk.applymap(lambda x: int(x))
             self.df17wk.applymap(lambda x: int(x))
 
-    def test_shift(self,
-                   df,
-                   fieldlist=['wl', 'hx', 'sw'],
-                   stdpoints=[20, 30, 45, 60, 75, 90, 100]
+    @staticmethod
+    def test_shift(df,
+                   fieldlist=('wl', 'hx', 'sw'),
+                   stdpoints=(20, 30, 45, 60, 75, 90, 100),
+                   rawpoints=[0, .15, .30, .50, .70, .85, 1.00]
                    ):
         mddict = dict()
         for fs in fieldlist:
             print(f'---< {fs} >---')
-            md = stm.test_model(df=df, fieldnames=fs, stdpoints=stdpoints)
+            md = stm.test_model(df=df, fieldnames=fs, stdpoints=list(stdpoints), rawpoints=rawpoints)
             mddict[fs] = md
         return mddict
 
@@ -92,7 +93,7 @@ class Data:
         mdd40 = self.test_shift(df, fieldlist=[field], stdpoints=self.stdpoints40)[field]
         import pyex_seg as psg
         seg = psg.SegTable()
-        seg.set_parameters(segmax=100,segmin=1)
+        seg.set_parameters(segmax=100, segmin=1)
         seg.set_data(mdd00.outdf[[field, field+'_plt']].apply(round).astype(int), [field, field+'_plt'])
         seg.run()
         dfseg = seg.segdf[['seg', field+'_count', field+'_plt_count']].copy(deep=True)
@@ -111,12 +112,13 @@ class Data:
         seg.run()
         dfseg[field+'_40_count'] = seg.segdf[field+'_plt_count']
 
-        import matplotlib.pyplot as plt
-        ax1 = plt.subplot(221)
+        # import matplotlib.pyplot as plt
+        # ax1 = plt.subplot(221)
 
-        return (dfseg, mdd00, mdd20, mdd30, mdd40)
+        return dfseg, mdd00, mdd20, mdd30, mdd40
 
-    def smooth_field(self, df, seg_field, count_field, scope:list):
+    @classmethod
+    def smooth_field(cls, df, count_field, scope:list):
         lastindex = df.index[0]
         for index, row in df.iterrows():
             if index in range(scope[0], scope[1]):
