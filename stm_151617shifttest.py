@@ -2,6 +2,7 @@
 # version 2017-09-16
 
 import pandas as pd
+import matplotlib.pyplot as plt
 # import numpy as np
 # import time
 import pyex_stm as stm
@@ -78,15 +79,25 @@ class Data:
                    fieldlist=('wl', 'hx', 'sw'),
                    stdpoints=(20, 30, 45, 60, 75, 90, 100),
                    rawpoints=[0, .15, .30, .50, .70, .85, 1.00]
+    def test_shift(self,
+                   df,
+                   fieldlist=['wl', 'hx', 'sw'],
+                   stdpoints=[20, 30, 45, 60, 75, 90, 100],
+                   rawpoints=[0, .15, .30, .50, .70, .85, 1.00]
                    ):
+        # rawpoints = [0, 0.0229, 0.1596, 0.50, 0.8423, 0.9774, 1.00]
         mddict = dict()
         for fs in fieldlist:
             print(f'---< {fs} >---')
             md = stm.test_model(df=df, fieldnames=fs, stdpoints=list(stdpoints), rawpoints=rawpoints)
+            md = stm.test_model(df=df,
+                                fieldnames=fs,
+                                stdpoints=stdpoints,
+                                rawpoints=rawpoints)
             mddict[fs] = md
         return mddict
 
-    def test_shift_all(self, df, field: str):
+    def test_shift_all(self, df, field: str, newname:str):
         mdd00 = self.test_shift(df, fieldlist=[field], stdpoints=self.stdpoints00)[field]
         mdd20 = self.test_shift(df, fieldlist=[field], stdpoints=self.stdpoints20)[field]
         mdd30 = self.test_shift(df, fieldlist=[field], stdpoints=self.stdpoints30)[field]
@@ -112,41 +123,31 @@ class Data:
         seg.run()
         dfseg[field+'_40_count'] = seg.segdf[field+'_plt_count']
 
-        # import matplotlib.pyplot as plt
-        # ax1 = plt.subplot(221)
+        dfdict = {field+'_count': newname+'_raw', field+'_plt_count': newname+'_0_100',
+                  field + '_20_count': newname + '_20_100', field + '_30_count': newname + '_30_100',
+                  field + '_40_count': newname + '_40_100'
+                  }
+        dfseg = dfseg[list(dfdict.keys())]
+        dfseg.rename(columns=dfdict, inplace=True)
+        return (dfseg, mdd00, mdd20, mdd30, mdd40)
 
-        return dfseg, mdd00, mdd20, mdd30, mdd40
-
-    @classmethod
-    def smooth_field(cls, df, count_field, scope:list):
+    def smooth_field(self, df, seg_field, count_field, scope:list):
         lastindex = df.index[0]
         for index, row in df.iterrows():
             if index in range(scope[0], scope[1]):
-                if row[count_field] == 0:
-                    df.loc[index, count_field] = df.loc[lastindex, count_field]
+                if row[field] == 0:
+                    df.loc[index, field] = df.loc[lastindex, field]
                     print(index,lastindex)
             lastindex = index
+        # remove peak
+        for index, row in df.iterrows():
+            if index in range(scope[0]+1, scope[1]-1):
+                if row[field] > df.loc[index-1,field]*1.5:
+                    df.loc[index, field] = int((df.loc[index-1,field] + df.loc[index+1,field])/2)
+                if row[field] > df.loc[index+1,field]*1.5:
+                    df.loc[index, field] = int((df.loc[index-1,field] + df.loc[index+1,field])/2)
 
-    def smooth(self, df, field, mode='backward', maxindex=99, minindex=20):
-        for index, rows in df.iterrows():
-            if index > maxindex:
-                continue
-            if index < minindex:
-                continue
-            if (index>0) & ((rows[field] == 0) | (rows[field] > df.loc[index+1,field]*1.8)) & (mode == 'backward'):
-                print(index, rows[field], df.loc[index+1,field])
-                df.loc[index, field] = df.loc[index+1, field]
-            if (index in range(1, len(df)-1)) & (rows[field] == 0) & (mode == 'average'):
-                rows[field] = int((df.loc[index-1,field] + df.loc[index-1,field])/2)
-        return df
-
-    def plot_multi(self, df ,sortfield='seg',
-                   fieldlist=['sw100_count',
-                              'sw100_plt_count',
-                              'sw100_20_count',
-                              'sw100_30_count',
-                              'sw100_40_count']):
-        if 'seg' in df.columns:
-            df.sort_values(sortfield)[fieldlist].plot.line()
-        else:
-            df[fieldlist].plot.line()
+    def plot_df(self, df, fignum=1):
+        plt.figure(fignum)
+        for f in df.columns:
+            plt.plot(df.index, df[f])
