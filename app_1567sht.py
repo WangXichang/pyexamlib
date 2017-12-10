@@ -79,17 +79,13 @@ class Data:
                    fieldlist=('wl', 'hx', 'sw'),
                    stdpoints=(20, 30, 45, 60, 75, 90, 100),
                    rawpoints=[0, .15, .30, .50, .70, .85, 1.00]
-    def test_shift(self,
-                   df,
-                   fieldlist=['wl', 'hx', 'sw'],
-                   stdpoints=[20, 30, 45, 60, 75, 90, 100],
-                   rawpoints=[0, .15, .30, .50, .70, .85, 1.00]
                    ):
         # rawpoints = [0, 0.0229, 0.1596, 0.50, 0.8423, 0.9774, 1.00]
+        # rawpoints = [0, 0.02275, 0.158655, 0.5, 0.841345, 0.97725, 1.00]   # from scipy.stats.norm(0,1).sf
         mddict = dict()
         for fs in fieldlist:
             print(f'---< {fs} >---')
-            md = stm.test_model(df=df, fieldnames=fs, stdpoints=list(stdpoints), rawpoints=rawpoints)
+            # md = stm.test_model(df=df, fieldnames=fs, stdpoints=list(stdpoints), rawpoints=rawpoints)
             md = stm.test_model(df=df,
                                 fieldnames=fs,
                                 stdpoints=stdpoints,
@@ -98,10 +94,26 @@ class Data:
         return mddict
 
     def test_shift_all(self, df, field: str, newname:str):
-        mdd00 = self.test_shift(df, fieldlist=[field], stdpoints=self.stdpoints00)[field]
-        mdd20 = self.test_shift(df, fieldlist=[field], stdpoints=self.stdpoints20)[field]
-        mdd30 = self.test_shift(df, fieldlist=[field], stdpoints=self.stdpoints30)[field]
-        mdd40 = self.test_shift(df, fieldlist=[field], stdpoints=self.stdpoints40)[field]
+        # set to 1 std step in stdscore
+        rawpoints1 = [0, 0.05, 0.15, 0.5, 0.85, 0.95, 1.00]
+        # rawpoints1 = [0, 0.02275, 0.158655, 0.5, 0.841345, 0.97725, 1.00]
+        # rawpoints = [0, .15, .30, .50, .70, .85, 1.00]    # for 0.5 std step
+        mdd00 = Data.test_shift(df, fieldlist=[field],
+                                stdpoints=self.stdpoints00,
+                                rawpoints=rawpoints1
+                                )[field]
+        mdd20 = Data.test_shift(df, fieldlist=[field],
+                                stdpoints=self.stdpoints20,
+                                rawpoints=rawpoints1
+                                )[field]
+        mdd30 = Data.test_shift(df, fieldlist=[field],
+                                stdpoints=self.stdpoints30,
+                                rawpoints=rawpoints1
+                                )[field]
+        mdd40 = Data.test_shift(df, fieldlist=[field],
+                                stdpoints=self.stdpoints40,
+                                rawpoints=rawpoints1
+                                )[field]
         import pyex_seg as psg
         seg = psg.SegTable()
         seg.set_parameters(segmax=100, segmin=1)
@@ -131,7 +143,7 @@ class Data:
         dfseg.rename(columns=dfdict, inplace=True)
         return (dfseg, mdd00, mdd20, mdd30, mdd40)
 
-    def smooth_field(self, df, seg_field, count_field, scope:list):
+    def smooth_field(self, df, field, scope:list):
         lastindex = df.index[0]
         for index, row in df.iterrows():
             if index in range(scope[0], scope[1]):
@@ -148,6 +160,9 @@ class Data:
                     df.loc[index, field] = int((df.loc[index-1,field] + df.loc[index+1,field])/2)
 
     def plot_df(self, df, fignum=1):
+        from matplotlib.font_manager import FontProperties as fp
+        font_simhei = fp(fname=r'C:\Windows\Fonts\simhei.ttf',size=14)
         plt.figure(fignum)
+        plt.title(u'分数转换结果显示', fontproperties=font_simhei)
         for f in df.columns:
             plt.plot(df.index, df[f])
