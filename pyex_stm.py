@@ -261,10 +261,10 @@ class PltScoreModel(ScoreTransformModel):
         # rawStartpoint = x1
         for i in range(1, len(self.__stdScorePoints)):
             if (self.__rawScorePoints__[i] + self.__rawScorePoints__[i-1]) < 0.1**6:
-                print('raw score percent is not differrentiable,{}-{}'.format(i, i-1))
-                return False
-            coff = (self.__stdScorePoints[i] - self.__stdScorePoints[i - 1]) / \
-                   (self.__rawScorePoints__[i] - self.__rawScorePoints__[i - 1])
+                print('raw score percent is not differrentiable,{}-{}'.format(i-1, i))
+                # return False
+            coff_m = (self.__rawScorePoints__[i] - self.__rawScorePoints__[i - 1])
+            coff = (self.__stdScorePoints[i] - self.__stdScorePoints[i - 1]) / (1 if coff_m < 0.1**6 else coff_m)
             y1 = self.__stdScorePoints[i - 1]
             x1 = self.__rawScorePoints__[i - 1]
             coff = math.floor(coff*10000)/10000
