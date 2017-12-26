@@ -18,24 +18,26 @@ def exp_scoredf_normal(mean=70, std=10, maxscore=100, minscore=0, samples=100000
 def test_model(name='plt', df=None,
                fieldnames='sf',
                rawpoints=[0, 0.0229, 0.1596, 0.50, 0.8423, 0.9774, 1.00],
-               #rawpoints=[0, .15, .30, .50, .70, .85, 1.00],
                stdpoints=[20, 30, 45, 60, 75, 90, 100],  # std=15 old version
-               # stdpoints=[0, 10, 30, 50, 70, 90, 100],  # std=20
-               # stdpoints=[20, 28, 44, 60, 76, 92, 100],  # std=16
-               # stdpoints=[30, 43, 51, 65, 79, 93, 100],  # std=14
-               # stdpoints=[40, 46, 58, 70, 82, 94, 100],  # std=12
                dispmodel=False
                ):
+    # rawpoints=[0, .15, .30, .50, .70, .85, 1.00],
+    # rawpoints = [0, 0.023, 0.169, 0.50, 0.841, 0.977, 1]   # normal ratio
+    # rawpoints = [0, .15, .30, .50, .70, .85, 1.00]    # ajust ratio
+    # stdpoints=[0, 10, 30, 50, 70, 90, 100],  # std=20
+    # stdpoints=[20, 28, 44, 60, 76, 92, 100],  # std=16
+    # stdpoints=[30, 43, 51, 65, 79, 93, 100],  # std=14
+    # stdpoints=[40, 46, 58, 70, 82, 94, 100],  # std=12
+    # stdpoints = [40, 50, 65, 80, 95, 110, 120]  # std=15
+    # stdpoints = [20, 30, 45, 60, 75, 90, 100]  # std=15
+
     if type(df) != pd.DataFrame:
         scoredf = exp_scoredf_normal()
     else:
         scoredf = df
+
     if name == 'plt':
         pltmodel = PltScoreModel()
-        #rawpoints = [0, 0.023, 0.169, 0.50, 0.841, 0.977, 1]   # normal ratio
-        #rawpoints = [0, .15, .30, .50, .70, .85, 1.00]    # ajust ratio
-        #stdpoints = [40, 50, 65, 80, 95, 110, 120]  # std=15
-        #stdpoints = [20, 30, 45, 60, 75, 90, 100]  # std=15
         pltmodel.set_data(scoredf, [fieldnames])
         pltmodel.set_parameters(rawpoints, stdpoints)
         pltmodel.run()

@@ -1,6 +1,7 @@
 # version 2017-09-16
 # 2017-11-18
 
+
 import matplotlib.pyplot as plt
 # import matplotlib as mp
 import pandas as pd
@@ -51,6 +52,12 @@ def create_normaltable(size=400, std=1, mean=0, stdnum=4):
     return ndf
 
 
+def create_norm_table_scipy(points=1000):
+    comp_points = points
+    internal = [8*(x-comp_points/2)/comp_points for x in range(comp_points)]
+    return [(v,stats.norm.cdf(v)) for v in internal]
+
+
 # use scipy.stats descibe report dataframe info
 def report_stats_describe(dataframe, decdigits=4):
     """
@@ -96,15 +103,20 @@ def report_stats_describe(dataframe, decdigits=4):
     dict = {'records': sd.nobs, 'max': sd.minmax[1], 'min': sd.minmax[0],
             'mean': sd.mean, 'variance': sd.variance, 'skewness': sd.skewness,
             'kurtosis': sd.kurtosis,
-            'relation':pr}
+            'relation': pr}
     return dict
 
+
 class ScoreStats():
+
     """
     :input
         sdf:score dataframe
+
     :result data
-        segdf: segment for some fields
+        outdf: segment for some fields， group by expression,
+               statsvalues fields( )
+
     :result fun
         report_stats: stats result for sdf data, max,mean,min,skew,kurtosis
         plot_line: plot distribute line graph
